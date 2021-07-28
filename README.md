@@ -6,6 +6,8 @@ In this repository, we will demonstrate the below functionality of Cloud Build P
 * Running builds within a specific region on Google-managed workers
 * Large range of machine types configurable for workers that run your build
 
+![Cloud Build Private Pools Architecture](img/architecture.png)
+
 The above functionality in Private Pools is achieved with the same schema users are used to in Cloud Build.
 
 This will be demonstrated by:
