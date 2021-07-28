@@ -1,7 +1,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/curl'
-  args: ['10.4.0.5:80']
+  args: ['<add-ip-address>80']
 
 # run build on private pool
 options:
-  workerPool: 'projects/agmsb-k8s/locations/us-west1/workerPools/sandbox-privatepool'
+  workerPool: 'projects/<add-project-id>/locations/<add-region>/workerPools/<add-privatepools-name>'
