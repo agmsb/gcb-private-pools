@@ -1,6 +1,6 @@
 steps:
 - name: 'gcr.io/cloud-builders/curl'
-  args: ['<add-ip-address>80']
+  args: ['<add-ip-address>:80']
 
 # run build on private pool
 options:
