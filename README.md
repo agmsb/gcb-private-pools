@@ -214,10 +214,10 @@ We will be editing the `cloudbuild.yaml` build config file.
 
 To simulate accessing private resources in our VPC, we will run a `curl` build step that will issue a request successfully to our private sample application on GKE.
 
-In line 3 of `cloudbuild.yaml`, replace `<add-ip-address>` with the IP address we stored in $ILB.
+In line 3 of `cloudbuild.yaml`, replace `<add-ip-address>` with the IP address for our private application on GKE, which we can access by running `echo $ILB`.
 
 ```
-echo $ILB
+  args: ['<add-ip-address>:80']
 ```
 
 In line 6, replace `<add-project-id>` with your GCP Project ID, `<add-region>` with the value stored in `$REGION`, and `<add-privatepools-name>` with the value stored in `$PRIVATE_POOL_NAME`.
