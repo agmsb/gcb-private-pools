@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: private-app
+spec:
+  selector:
+    matchLabels:
+      app: private
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: private
+    spec:
+      containers:
+      - name: hello
+        image: "gcr.io/google-samples/hello-app:2.0"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: private-app-svc
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+  labels:
+    app: private
+spec:
+  type: LoadBalancer
+  selector:
+    app: private
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
