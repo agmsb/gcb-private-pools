@@ -1,31 +1,38 @@
-# Accessing private resources using Cloud Build Private Pools
+# Accessing private resources using Cloud Build private pools
 
-In this repository, we will demonstrate the below functionality of Cloud Build Private Pools:
+In this repository, we will demonstrate the below functionality of [Cloud Build private pools](https://cloud.google.com/build/docs/private-pools/private-pools-overview):
 
-* Private connectivity to resources in your VPC
-* Running builds within a specific region on Google-managed workers
-* Large range of machine types configurable for workers that run your build
+* Private connectivity to resources in your VPC network
+* Running builds within a specific [region](https://cloud.google.com/build/docs/locations
+) on Google-managed workers
+* Large range of [machine types](https://cloud.google.com/build/docs/private-pools/worker-pool-config-file-schema#machinetype) configurable for workers that run your build
 
-![Cloud Build Private Pools Architecture](img/architecture.png)
+![Cloud Build private pools Architecture](img/architecture.png)
 
-The above functionality in Private Pools is achieved with the same schema users are used to in Cloud Build.
+The above functionality in private pools is achieved with the same schema users are used to in Cloud Build.
 
 This will be demonstrated by:
 
 * Running a private sample application on a GKE cluster, exposed on a private RFC1918 IP address via an Internal Load Balancer
-* Accessing the sample application from a build running on Cloud Build Private Pools
+* Accessing the sample application from a build running on Cloud Build private pools
 
 ## Prerequisites
 
 This walkthrough requires that you have the below prerequisites:
 
 * Unix workstation
-* gcloud
+* [gcloud](https://cloud.google.com/sdk/docs/quickstart)
 * kubectl
 * GCP Project with Cloud Build API, Service Networking API, and Kubernetes Engine API enabled
-* Permissions to create VPC networks, GKE clusters, and run builds in Cloud Build
+* IAM user with the below roles:
+  * Cloud Build Editor
+  * Cloud Build WorkerPool Owner
+  * Kubernetes Engine Admin
+  * Network Admin
 
-It is highly recommended you utilize a sandbox/test environment for this walkthrough. Cloud Shell is a suitable workstation for this tutorial. 
+
+
+It is highly recommended you utilize a sandbox/test environment for this walkthrough. [Cloud Shell](http://shell.cloud.google.com/) is a suitable workstation for this tutorial. 
 
 ## Set up environment variables
 
@@ -43,7 +50,7 @@ PRIVATE_POOL_NAME=sandbox-privatepool
 
 ## Create a VPC 
 
-We will start by creating a VPC in your GCP project. This network will be utilized to run resources for Cloud Build Private Pools to access over a private network connection.
+We will start by creating a VPC in your GCP project. This network will be utilized to run resources for Cloud Build private pools to access over a private network connection.
 
 ```
 gcloud compute networks create $VPC_NAME \
@@ -135,13 +142,13 @@ Store the IP address under `EXTERNAL-IP` in the output as an environment variabl
 ILB=10.4.0.5
 ```
 
-Now that we have our private resources set up, we can now configure Cloud Build Private Pools. 
+Now that we have our private resources set up, we can now configure Cloud Build private pools. 
 
-## Configure your VPC for Cloud Build Private Pools
+## Configure your VPC for Cloud Build private pools
 
-Cloud Build Private Pools run workers using the Service Networking API. This enables you to offer your managed services on internal IP addresses. This is achieved by peering the Google-managed VPC running Cloud Build Private Pool workers with your own VPC.
+Cloud Build private pools run workers using the Service Networking API. This enables you to offer your managed services on internal IP addresses. This is achieved by peering the Google-managed VPC running Cloud Build Private Pool workers with your own VPC.
 
->Note: Cloud Build Private Pools only need to be configured via this method when builds need to access resources over a private network. If you are only looking to use Cloud Build for isolating builds to regions or for getting access to greater optionality of machine types, you do not need to do this. 
+>Note: Cloud Build private pools only need to be configured via this method when builds need to access resources over a private network. If you are only looking to use Cloud Build for isolating builds to regions or for getting access to greater optionality of machine types, you do not need to do this. 
 
 
 We will ensure that the Service Networking API is enabled.
@@ -184,22 +191,22 @@ Operation "operations/pssn.p24-381015962062-12a0a42b-3152-41d0-aaff-0ab4cdb1bde8
 
 Now we can create our Private Pool. We will be editing the `privatepool.yaml` config file to configure the Private Pool settings.
 
-In line 2 of `privatepool.yaml`, replace `<add-project-number>` and `<add-vpc-name>` with your GCP Project number and the value stored in `$VPC_NAME` respectively. 
+In line 17 of `privatepool.yaml`, replace `<add-project-number>` and `<add-vpc-name>` with your GCP Project number and the value stored in `$VPC_NAME` respectively. 
 
 ```
     peeredNetwork: projects/<add-project-number>/global/networks/<add-vpc-name>
 ```
 
-If you prefer to change the machine type, disk size, or disable Public IPs on the Cloud Build Private Pool, you can do so in lines 4-6. 
+Let's now create the Private Pool. 
 
 ```
-gcloud alpha builds worker-pools create $PRIVATE_POOL_NAME --config-from-file privatepool.yaml --region $REGION
+gcloud builds worker-pools create $PRIVATE_POOL_NAME --config-from-file privatepool.yaml --region $REGION
 ```
 
 Your output should look similar to the below.
 ```
 Creating worker pool...done.                                                                                                              
-Created [https://cloudbuild.googleapis.com/v1beta1/projects/agmsb-k8s/locations/us-west1/workerPools/projects%2F381015962062%2Flocations%2Fus-west1%2FworkerPools%2Fsandbox-privatepool].
+Created [https://cloudbuild.googleapis.com/v1/projects/agmsb-k8s/locations/us-west1/workerPools/projects%2F381015962062%2Flocations%2Fus-west1%2FworkerPools%2Fsandbox-privatepool].
 NAME                 CREATE_TIME                STATE
 sandbox-privatepool  2021-07-28T14:48:37+00:00  RUNNING
 ```
@@ -208,13 +215,13 @@ Now we are ready to run our build!
 
 ## Running a build on a Cloud Build Private Pool to access private resources
 
-One of the notable features of Private Pools is that for existing users of Cloud Build, little will change. We will be running a build using the same schema available to useres before Private Pools, adding only two lines of config to specify that the build should run on a Private Pool. 
+One of the notable features of private pools is that for existing users of Cloud Build, little will change. We will be running a build using the same schema available to useres before private pools, adding only two lines of config to specify that the build should run on a Private Pool. 
 
 We will be editing the `cloudbuild.yaml` build config file.
 
 To simulate accessing private resources in our VPC, we will run a `curl` build step that will issue a request successfully to our private sample application on GKE.
 
-In line 3 of `cloudbuild.yaml`, replace `<add-ip-address>` with the IP address for our private application on GKE, which we can access by running `echo $ILB`.
+In line 22 of `cloudbuild.yaml`, replace `<add-ip-address>` with the IP address for our private application on GKE, which we can access by running `echo $ILB`.
 
 ```
   args: ['<add-ip-address>:80']
@@ -266,7 +273,7 @@ DONE
 -------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
-In the build logs, we can see that the `curl` build step completed -- were able to successfully access a private ILB from a build running on Cloud Build Private Pools!
+In the build logs, we can see that the `curl` build step completed -- were able to successfully access a private ILB from a build running on Cloud Build private pools!
 
 ## Cleanup
 
@@ -277,7 +284,7 @@ gcloud container clusters delete $GKE_CLUSTER_NAME --region $REGION
 
 Delete the Cloud Build Private Pool. 
 ```
-gcloud alpha builds worker-pools delete $PRIVATE_POOL_NAME --region $REGION
+gcloud builds worker-pools delete $PRIVATE_POOL_NAME --region $REGION
 ```
 
 Delete the VPC.
